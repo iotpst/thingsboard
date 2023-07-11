@@ -18,6 +18,7 @@ package org.thingsboard.rule.engine.aws.sqs;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import com.amazonaws.services.sqs.model.MessageAttributeValue;
@@ -75,10 +76,13 @@ public class TbSqsNode extends TbAbstractExternalNode {
         AWSCredentials awsCredentials = new BasicAWSCredentials(this.config.getAccessKeyId(), this.config.getSecretAccessKey());
         AWSStaticCredentialsProvider credProvider = new AWSStaticCredentialsProvider(awsCredentials);
         try {
+            // TODO Remove hardcoded URL
             this.sqsClient = AmazonSQSClientBuilder.standard()
+                    .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration("http://localhost:4566", "eu-central-1"))
                     .withCredentials(credProvider)
-                    .withRegion(this.config.getRegion())
                     .build();
+
+
         } catch (Exception e) {
             throw new TbNodeException(e);
         }

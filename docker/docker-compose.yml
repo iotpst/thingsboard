@@ -18,6 +18,19 @@
 version: '3.0'
 
 services:
+  localstack:
+    container_name: "${LOCALSTACK_DOCKER_NAME-localstack_main}"
+    image: localstack/localstack
+    ports:
+      - "127.0.0.1:4566:4566"            # LocalStack Gateway
+      - "127.0.0.1:4510-4559:4510-4559"  # external services port range
+    environment:
+      - DEBUG=${DEBUG-}
+      - DOCKER_HOST=unix:///var/run/docker.sock
+    volumes:
+      - "${LOCALSTACK_VOLUME_DIR:-./volume}:/var/lib/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+
   zookeeper:
     restart: always
     image: "zookeeper:3.8.0"
@@ -31,10 +44,12 @@ services:
     restart: always
     image: "${DOCKER_REPO}/${JS_EXECUTOR_DOCKER_NAME}:${TB_VERSION}"
     deploy:
-      replicas: 10
+      replicas: 1
     env_file:
       - tb-js-executor.env
   tb-core1:
+    deploy:
+      replicas: 1
     restart: always
     image: "${DOCKER_REPO}/${TB_NODE_DOCKER_NAME}:${TB_VERSION}"
     ports:
@@ -60,7 +75,10 @@ services:
       - tb-js-executor
       - tb-rule-engine1
       - tb-rule-engine2
+      - localstack
   tb-core2:
+    deploy:
+      replicas: 0
     restart: always
     image: "${DOCKER_REPO}/${TB_NODE_DOCKER_NAME}:${TB_VERSION}"
     ports:
@@ -86,7 +104,10 @@ services:
       - tb-js-executor
       - tb-rule-engine1
       - tb-rule-engine2
+      - localstack
   tb-rule-engine1:
+    deploy:
+      replicas: 1
     restart: always
     image: "${DOCKER_REPO}/${TB_NODE_DOCKER_NAME}:${TB_VERSION}"
     ports:
@@ -108,7 +129,10 @@ services:
     depends_on:
       - zookeeper
       - tb-js-executor
+      - localstack
   tb-rule-engine2:
+    deploy:
+      replicas: 0
     restart: always
     image: "${DOCKER_REPO}/${TB_NODE_DOCKER_NAME}:${TB_VERSION}"
     ports:
@@ -130,7 +154,10 @@ services:
     depends_on:
       - zookeeper
       - tb-js-executor
+      - localstack
   tb-mqtt-transport1:
+    deploy:
+      replicas: 1
     restart: always
     image: "${DOCKER_REPO}/${MQTT_TRANSPORT_DOCKER_NAME}:${TB_VERSION}"
     ports:
@@ -147,14 +174,16 @@ services:
       - zookeeper
       - tb-core1
       - tb-core2
+      - localstack
   tb-mqtt-transport2:
+    deploy:
+      replicas: 0
     restart: always
     image: "${DOCKER_REPO}/${MQTT_TRANSPORT_DOCKER_NAME}:${TB_VERSION}"
     ports:
       - "1883"
     environment:
       TB_SERVICE_ID: tb-mqtt-transport2
-      JAVA_OPTS: "${JAVA_OPTS}"
     env_file:
       - tb-mqtt-transport.env
     volumes:
@@ -164,7 +193,10 @@ services:
       - zookeeper
       - tb-core1
       - tb-core2
+      - localstack
   tb-http-transport1:
+    deploy:
+      replicas: 1
     restart: always
     image: "${DOCKER_REPO}/${HTTP_TRANSPORT_DOCKER_NAME}:${TB_VERSION}"
     ports:
@@ -181,7 +213,10 @@ services:
       - zookeeper
       - tb-core1
       - tb-core2
+      - localstack
   tb-http-transport2:
+    deploy:
+      replicas: 0
     restart: always
     image: "${DOCKER_REPO}/${HTTP_TRANSPORT_DOCKER_NAME}:${TB_VERSION}"
     ports:
@@ -198,7 +233,10 @@ services:
       - zookeeper
       - tb-core1
       - tb-core2
+      - localstack
   tb-coap-transport:
+    deploy:
+      replicas: 0
     restart: always
     image: "${DOCKER_REPO}/${COAP_TRANSPORT_DOCKER_NAME}:${TB_VERSION}"
     ports:
@@ -215,7 +253,10 @@ services:
       - zookeeper
       - tb-core1
       - tb-core2
+      - localstack
   tb-lwm2m-transport:
+    deploy:
+      replicas: 0
     restart: always
     image: "${DOCKER_REPO}/${LWM2M_TRANSPORT_DOCKER_NAME}:${TB_VERSION}"
     ports:
@@ -232,7 +273,10 @@ services:
       - zookeeper
       - tb-core1
       - tb-core2
+      - localstack
   tb-snmp-transport:
+    deploy:
+      replicas: 0
     restart: always
     image: "${DOCKER_REPO}/${SNMP_TRANSPORT_DOCKER_NAME}:${TB_VERSION}"
     environment:
@@ -247,21 +291,30 @@ services:
       - zookeeper
       - tb-core1
       - tb-core2
+      - localstack
   tb-web-ui1:
+    deploy:
+      replicas: 1
     restart: always
     image: "${DOCKER_REPO}/${WEB_UI_DOCKER_NAME}:${TB_VERSION}"
     ports:
-      - "8080"
+      - "8080:8080"
     env_file:
       - tb-web-ui.env
+#    volumes:
+#      - ./tb-volume:/home/node
   tb-web-ui2:
+    deploy:
+      replicas: 0
     restart: always
     image: "${DOCKER_REPO}/${WEB_UI_DOCKER_NAME}:${TB_VERSION}"
     ports:
-      - "8080"
+      - "8080:8080"
     env_file:
       - tb-web-ui.env
   tb-vc-executor1:
+    deploy:
+      replicas: 0
     restart: always
     image: "${DOCKER_REPO}/${TB_VC_EXECUTOR_DOCKER_NAME}:${TB_VERSION}"
     ports:
@@ -279,6 +332,8 @@ services:
       - tb-core1
       - tb-core2
   tb-vc-executor2:
+    deploy:
+      replicas: 0
     restart: always
     image: "${DOCKER_REPO}/${TB_VC_EXECUTOR_DOCKER_NAME}:${TB_VERSION}"
     ports:
@@ -295,7 +350,10 @@ services:
       - zookeeper
       - tb-core1
       - tb-core2
+      - localstack
   haproxy:
+    deploy:
+      replicas: 0
     restart: always
     container_name: "${LOAD_BALANCER_NAME}"
     image: thingsboard/haproxy-certbot:1.3.0

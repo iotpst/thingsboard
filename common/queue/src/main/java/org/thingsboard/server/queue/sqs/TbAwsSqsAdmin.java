@@ -20,6 +20,7 @@ import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
+import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import com.amazonaws.services.sqs.model.CreateQueueRequest;
@@ -49,10 +50,17 @@ public class TbAwsSqsAdmin implements TbQueueAdmin {
             credentialsProvider = new AWSStaticCredentialsProvider(awsCredentials);
         }
 
-        sqsClient = AmazonSQSClientBuilder.standard()
-                .withCredentials(credentialsProvider)
-                .withRegion(sqsSettings.getRegion())
-                .build();
+        if(sqsSettings.getEndpoint().equals("AWS_DEFAULT_ENDPOINT")) {
+            sqsClient = AmazonSQSClientBuilder.standard()
+                    .withCredentials(credentialsProvider)
+                    .withRegion(sqsSettings.getRegion())
+                    .build();
+        } else {
+            sqsClient = AmazonSQSClientBuilder.standard()
+                    .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(sqsSettings.getEndpoint(), sqsSettings.getRegion()))
+                    .withCredentials(credentialsProvider)
+                    .build();
+        }
 
         queues = sqsClient
                 .listQueues()
