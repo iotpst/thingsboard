@@ -832,6 +832,10 @@
                             <exclude>.run/**</exclude>
                             <exclude>**/NetworkReceive.java</exclude>
                             <exclude>**/lwm2m-registry/**</exclude>
+                            <exclude>docker/tb-transports/**</exclude>
+                            <exclude>docker/volume/cache/**</exclude>
+                            <exclude>docker/monitoring/**</exclude>
+                            <exclude>**/lombok.config</exclude>
                         </excludes>
                         <mapping>
                             <proto>JAVADOC_STYLE</proto>
